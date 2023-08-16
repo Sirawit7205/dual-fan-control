@@ -51,3 +51,6 @@ ibom.config.ini
 # 3dmodels
 3dmodels/
 
+# Microchip mcc generated files
+.generated_files/
+mcc_generated_files/
