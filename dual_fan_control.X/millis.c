@@ -10,8 +10,6 @@ volatile uint32_t current_millis = 0;
 void millis_counter_cb() {
     ENTER_CRITICAL(R);
     current_millis++;
-    TACH0_TIMER_Write(0);       //put TCB reset here because we want to sync TCB with millis()
-    TACH1_TIMER_Write(0);       //and we can only have one ISR
     EXIT_CRITICAL(R);
 }
 

@@ -68,8 +68,17 @@ int main(void)
         fan2_set_speed(speed_level);
         
         //check rotor lock
-        tach_CheckTimeoutFan1();
-        tach_CheckTimeoutFan2();
+        bool fan1_timeout = tach_CheckTimeoutFan1();
+        bool fan2_timeout = tach_CheckTimeoutFan2();
+        if(is_left && fan1_timeout) {
+            LED_BOTH_SetHigh();
+        } else if(is_left && !fan1_timeout) {
+            LED_BOTH_SetLow();
+        } else if(!is_left && fan2_timeout) {
+            LED_BOTH_SetHigh();
+        } else if(!is_left && !fan2_timeout) {
+            LED_BOTH_SetLow();
+        }
         
         //show RPM
         if(is_timed_out(display_millis, 1000)) {

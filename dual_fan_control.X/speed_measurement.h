@@ -13,7 +13,7 @@ extern "C" {
 #include "millis.h"
     
 // calculation const
-#define TIMER_1MS_RESOLUTION    32768UL
+#define TIMER_1MS_RESOLUTION    65535UL
 #define FREQ_RPM_RATIO          30      // 60 sec / 2 pulses per rotation
     
 // timeout const (ms)
@@ -22,10 +22,12 @@ extern "C" {
 // struct
 typedef struct TACH_CONTEXT {
     bool is_running;
-    uint32_t tach_last_ms;
-    uint32_t tach_last_timer_cnt;
+    uint32_t tach_timer_cnt;
     uint32_t current_rpm;
     uint16_t (*timer_read_cnt)(void);
+    void (*timer_write_cnt)(uint16_t);
+    void (*timer_start)(void);
+    void (*timer_stop)(void);
 } TACH_CONTEXT;
 
 // function
