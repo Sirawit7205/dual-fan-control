@@ -20,7 +20,7 @@ extern "C" {
 #define TACH_TIMEOUT            200
     
 // struct
-typedef struct TACH_CONTEXT {
+typedef struct {
     bool is_running;
     uint32_t tach_timer_cnt;
     uint32_t current_rpm;
@@ -28,14 +28,14 @@ typedef struct TACH_CONTEXT {
     void (*timer_write_cnt)(uint16_t);
     void (*timer_start)(void);
     void (*timer_stop)(void);
-} TACH_CONTEXT;
+} tach_context_t;
 
 // function
-void tach_Init();
-bool tach_CheckTimeoutFan1();
-bool tach_CheckTimeoutFan2();
-uint32_t tach_GetRpmFan1();
-uint32_t tach_GetRpmFan2();
+void tach_init();
+bool tach_check_timeout_fan1();
+bool tach_check_timeout_fan2();
+uint32_t tach_get_rpm_fan1();
+uint32_t tach_get_rpm_fan2();
 
 #ifdef	__cplusplus
 }

@@ -6,10 +6,10 @@
 #include "millis.h"
 #include "speed_measurement.h"
 
-volatile TACH_CONTEXT fan1_context;
-volatile TACH_CONTEXT fan2_context;
+volatile tach_context_t fan1_context;
+volatile tach_context_t fan2_context;
 
-void tach_CalculateSpeed(volatile TACH_CONTEXT *context) {
+void tach_calculate_speed_cb(volatile tach_context_t *context) {
     //calculate speed in RPM from pulse width
     //speed = frequency * 30
     //frequency = 1 / period
@@ -29,13 +29,13 @@ void tach_CalculateSpeed(volatile TACH_CONTEXT *context) {
     EXIT_CRITICAL(R);
 }
 
-void tach_TimerCount(volatile TACH_CONTEXT *context) {
+void tach_timer_count_cb(volatile tach_context_t *context) {
     ENTER_CRITICAL(R);
     context->tach_timer_cnt++;
     EXIT_CRITICAL(R);
 }
 
-bool tach_CheckTimeout(volatile TACH_CONTEXT *context) {
+bool tach_check_timeout(volatile tach_context_t *context) {
     if(!context->is_running) {
         return true;
     }
@@ -58,27 +58,27 @@ bool tach_CheckTimeout(volatile TACH_CONTEXT *context) {
     return timeout;
 }
 
-void tach_CalculateSpeedFan1() {
-    tach_CalculateSpeed(&fan1_context);
+void tach_calculate_speed_fan1() {
+    tach_calculate_speed_cb(&fan1_context);
 }
 
-void tach_CalculateSpeedFan2() {
-    tach_CalculateSpeed(&fan2_context);
+void tach_calculate_speed_fan2() {
+    tach_calculate_speed_cb(&fan2_context);
 }
 
-void tach_TimerCountFan1() {
-    tach_TimerCount(&fan1_context);
+void tach_timer_count_fan1() {
+    tach_timer_count_cb(&fan1_context);
 }
 
-void tach_TimerCountFan2() {
-    tach_TimerCount(&fan2_context);
+void tach_timer_count_fan2() {
+    tach_timer_count_cb(&fan2_context);
 }
 
-void tach_Init() {
-    TACH1_SetInterruptHandler(tach_CalculateSpeedFan1);
-    TACH2_SetInterruptHandler(tach_CalculateSpeedFan2);
-    TACH1_TIMER_CaptureCallbackRegister(tach_TimerCountFan1);
-    TACH2_TIMER_CaptureCallbackRegister(tach_TimerCountFan2);
+void tach_init() {
+    TACH1_SetInterruptHandler(tach_calculate_speed_fan1);
+    TACH2_SetInterruptHandler(tach_calculate_speed_fan2);
+    TACH1_TIMER_CaptureCallbackRegister(tach_timer_count_fan1);
+    TACH2_TIMER_CaptureCallbackRegister(tach_timer_count_fan2);
     
     fan1_context.is_running = false;
     fan1_context.tach_timer_cnt = 0;
@@ -97,22 +97,22 @@ void tach_Init() {
     fan2_context.timer_stop = TACH2_TIMER_Stop;
 }
 
-bool tach_CheckTimeoutFan1() {
-    return tach_CheckTimeout(&fan1_context);
+bool tach_check_timeout_fan1() {
+    return tach_check_timeout(&fan1_context);
 }
 
-bool tach_CheckTimeoutFan2() {
-    return tach_CheckTimeout(&fan2_context);
+bool tach_check_timeout_fan2() {
+    return tach_check_timeout(&fan2_context);
 }
 
-uint32_t tach_GetRpmFan1() {
+uint32_t tach_get_rpm_fan1() {
     ENTER_CRITICAL(R);
     uint32_t temp_rpm = fan1_context.current_rpm;
     EXIT_CRITICAL(R);
     return temp_rpm;
 }
 
-uint32_t tach_GetRpmFan2() {
+uint32_t tach_get_rpm_fan2() {
     ENTER_CRITICAL(R);
     uint32_t temp_rpm = fan2_context.current_rpm;
     EXIT_CRITICAL(R);

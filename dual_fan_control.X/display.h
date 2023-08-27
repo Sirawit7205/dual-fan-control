@@ -28,10 +28,10 @@ extern "C" {
 #define CHAR_o      0x5C
     
 // public functions
-void TM1650_ClearScreen();
-void TM1650_Setup(uint8_t brightness);
-void TM1650_SetNumber(uint16_t number, bool leadingZeroBlanking);
-void TM1650_SetCharacter(uint8_t position, uint8_t character);
+void tm1650_clear_screen();
+void tm1650_init(uint8_t brightness);
+void tm1650_set_number(uint16_t number, bool leading_zero_blanking);
+void tm1650_send_character(uint8_t position, uint8_t character);
 
 #ifdef	__cplusplus
 }

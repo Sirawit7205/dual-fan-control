@@ -49,8 +49,8 @@ int main(void)
     SYSTEM_Initialize();
     
     millis_init();
-    tach_Init();
-    TM1650_Setup(BRIGHTNESS_DEFAULT);
+    tach_init();
+    tm1650_init(BRIGHTNESS_DEFAULT);
     
     bool fan1_is_on = false, fan2_is_on = false;
     bool is_left = true;
@@ -68,8 +68,8 @@ int main(void)
         fan2_set_speed(speed_level);
         
         //check rotor lock
-        bool fan1_timeout = tach_CheckTimeoutFan1();
-        bool fan2_timeout = tach_CheckTimeoutFan2();
+        bool fan1_timeout = tach_check_timeout_fan1();
+        bool fan2_timeout = tach_check_timeout_fan2();
         if(is_left && fan1_timeout) {
             LED_BOTH_SetHigh();
         } else if(is_left && !fan1_timeout) {
@@ -84,9 +84,9 @@ int main(void)
         if(is_timed_out(display_millis, 1000)) {
             display_millis = millis();
             if(is_left) {
-                TM1650_SetNumber(tach_GetRpmFan1(), true);
+                tm1650_set_number(tach_get_rpm_fan1(), true);
             } else {
-                TM1650_SetNumber(tach_GetRpmFan2(), true);
+                tm1650_set_number(tach_get_rpm_fan2(), true);
             }
         }
         
