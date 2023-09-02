@@ -85,7 +85,8 @@ void tm1650_init(uint8_t brightness) {
     tm1650_send_command(TM1650_CTRL_CMD, (brightness << 4) | 0x01);
 }
 
-void tm1650_set_number(uint16_t number, bool leading_zero_blanking) {
+//for number with 4 digits or less
+void tm1650_set_number_short(uint16_t number, bool leading_zero_blanking) {
     uint8_t buffer[DISPLAY_DIGITS] = {};
     for(int i = DISPLAY_DIGITS - 1; i >= 0; i--) {
         buffer[i] = number % 10;
@@ -102,6 +103,30 @@ void tm1650_set_number(uint16_t number, bool leading_zero_blanking) {
         } else {
             tm1650_send_command(TM1650_DISP_BASE_CMD + (i * 2), 0x00);
         }
+    }
+}
+
+//for number with 5 digits
+void tm1650_set_number_long(uint16_t number) {
+    uint8_t coefficient = number / 1000;
+    uint8_t buffer[DISPLAY_DIGITS] = {};
+    
+    //example text: 1.2E4 (12000)
+    buffer[0] = digits[(coefficient / 10)] | CHAR_dot;  //adding a dot
+    buffer[1] = digits[(coefficient % 10)];
+    buffer[2] = CHAR_E;
+    buffer[3] = digits[4];
+    
+    for(int i = 0; i < DISPLAY_DIGITS; i++) {
+        tm1650_send_command(TM1650_DISP_BASE_CMD + (i * 2), buffer[i]);
+    }
+}
+
+void tm1650_set_number(uint16_t number, bool leading_zero_blanking) {
+    if(number >= 10000) {
+        tm1650_set_number_long(number);
+    } else {
+        tm1650_set_number_short(number, leading_zero_blanking);
     }
 }
 

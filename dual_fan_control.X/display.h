@@ -26,6 +26,7 @@ extern "C" {
 #define CHAR_n      0x54
 #define CHAR_O      0x3F
 #define CHAR_o      0x5C
+#define CHAR_dot    0x80
     
 // public functions
 void tm1650_clear_screen();
