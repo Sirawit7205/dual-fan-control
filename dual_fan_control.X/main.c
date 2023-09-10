@@ -39,6 +39,7 @@
 #include "speed_controller.h"
 #include "speed_measurement.h"
 #include "trimpot.h"
+#include "user_interface.h"
 
 /*
     Main application
@@ -51,12 +52,9 @@ int main(void)
     millis_init();
     tach_init();
     tm1650_init(BRIGHTNESS_DEFAULT);
+    ui_init();
     
-    bool fan1_is_on = false, fan2_is_on = false;
-    bool is_left = true;
-    uint32_t start_millis;
-    uint32_t display_millis = millis();
-    LED_FAN1_SetLow();
+    uint32_t start_millis = millis();
     
     while(1)
     {
@@ -67,56 +65,34 @@ int main(void)
         fan1_set_speed(speed_level);
         fan2_set_speed(speed_level);
         
-        //check rotor lock
+        //check rotor lock and speed
         bool fan1_timeout = tach_check_timeout_fan1();
         bool fan2_timeout = tach_check_timeout_fan2();
-        if(is_left && fan1_timeout) {
-            LED_BOTH_SetHigh();
-        } else if(is_left && !fan1_timeout) {
-            LED_BOTH_SetLow();
-        } else if(!is_left && fan2_timeout) {
-            LED_BOTH_SetHigh();
-        } else if(!is_left && !fan2_timeout) {
-            LED_BOTH_SetLow();
+        uint32_t fan1_rpm = tach_get_rpm_fan1();
+        uint32_t fan2_rpm = tach_get_rpm_fan2();
+        ui_update_data(!fan1_timeout, fan1_rpm, !fan2_timeout, fan2_rpm);
+        
+        //turn off fan if timeout
+        if(fan1_timeout) {
+            fan1_power(false);
+        }
+        if(fan2_timeout) {
+            fan2_power(false);
         }
         
-        //show RPM
-        if(is_timed_out(display_millis, 1000)) {
-            display_millis = millis();
-            if(is_left) {
-                tm1650_set_number(tach_get_rpm_fan1(), true);
-            } else {
-                tm1650_set_number(tach_get_rpm_fan2(), true);
-            }
-        }
-        
-        //toggle side
+        //detect button presses
         if(!BTN_SEL_GetValue()) {
-            if(is_left) {
-                is_left = false;
-                LED_FAN1_SetHigh();
-                LED_FAN2_SetLow();
-            } else {
-                is_left = true;
-                LED_FAN1_SetLow();
-                LED_FAN2_SetHigh();
-            }
+            ui_update_sel_btn();
+            start_millis = millis();
+            while(!is_timed_out(start_millis, 500));
+        }
+        if(!BTN_ON_GetValue()) {
+            ui_update_pwr_btn();
             start_millis = millis();
             while(!is_timed_out(start_millis, 500));
         }
         
-        //turn on and off
-        if(!BTN_ON_GetValue()) {
-            if(is_left) {
-                fan1_is_on = !fan1_is_on;
-                fan1_power(fan1_is_on);
-            } else {
-                fan2_is_on = !fan2_is_on;
-                fan2_power(fan2_is_on);
-            }
-            start_millis = millis();
-            while(!is_timed_out(start_millis, 500));
-        }
+        //commit display changes
+        ui_update_state();
     }
-
 }
