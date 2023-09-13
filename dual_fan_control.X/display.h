@@ -23,12 +23,12 @@ extern "C" {
 // some characters mapping
 #define CHAR_E      0x79
 #define CHAR_F      0x71
-#define CHAR_n      0x54
+#define CHAR_N      0x54
 #define CHAR_O      0x3F
-#define CHAR_o      0x5C
-#define CHAR_dot    0x80
-#define CHAR_dash   0x40
-#define CHAR_clr    0x00
+#define CHAR_P      0x73
+#define CHAR_DOT    0x80
+#define CHAR_DASH   0x40
+#define CHAR_CLR    0x00
     
 // public functions
 void tm1650_clear_screen();

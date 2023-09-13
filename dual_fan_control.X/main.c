@@ -65,12 +65,16 @@ int main(void)
         fan1_set_speed(speed_level);
         fan2_set_speed(speed_level);
         
+        //detect if pot changes enough and show on display
+        uint16_t speed_percent = trimpot_get_scaled(0, 100);
+        ui_update_pot_data(speed_percent);
+        
         //check rotor lock and speed
         bool fan1_timeout = tach_check_timeout_fan1();
         bool fan2_timeout = tach_check_timeout_fan2();
         uint32_t fan1_rpm = tach_get_rpm_fan1();
         uint32_t fan2_rpm = tach_get_rpm_fan2();
-        ui_update_data(!fan1_timeout, fan1_rpm, !fan2_timeout, fan2_rpm);
+        ui_update_tach_data(!fan1_timeout, fan1_rpm, !fan2_timeout, fan2_rpm);
         
         //turn off fan if timeout
         if(fan1_timeout) {

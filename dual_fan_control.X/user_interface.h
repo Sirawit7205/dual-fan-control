@@ -10,13 +10,16 @@ extern "C" {
 #include "mcc_generated_files/system/pins.h"
 #include "display.h"
 #include "millis.h"
+#include "speed_controller.h"
     
 // display constant
 #define ANIMATION_PERIOD    200
 #define RPM_PERIOD          1000
 #define ON_OFF_PERIOD       2000
+#define PWM_PERIOD          2000
 
 #define ANIMATION_STEPS     3
+#define PWM_POT_DIFF        1
     
 // display state
 typedef enum {
@@ -39,6 +42,7 @@ typedef struct {
     disp_state_enum display_state;
     uint32_t display_millis;
     bool state_changed;
+    uint16_t speed_percent;
     ui_side_context_t left_side;
     ui_side_context_t right_side;
 } ui_display_context_t;
@@ -47,9 +51,9 @@ typedef struct {
 void ui_init();
 void ui_update_sel_btn();
 void ui_update_pwr_btn();
-void ui_update_data(bool fan1_on, uint32_t fan1_rpm, bool fan2_on, uint32_t fan2_rpm);
+void ui_update_tach_data(bool fan1_on, uint32_t fan1_rpm, bool fan2_on, uint32_t fan2_rpm);
+void ui_update_pot_data(uint16_t speed_percent);
 void ui_update_state();
-btn_state_enum ui_get_button_state();
 
 #ifdef	__cplusplus
 }

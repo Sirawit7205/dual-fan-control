@@ -112,7 +112,7 @@ void tm1650_set_number_long(uint16_t number) {
     uint8_t buffer[DISPLAY_DIGITS] = {};
     
     //example text: 1.2E4 (12000)
-    buffer[0] = digits[(coefficient / 10)] | CHAR_dot;  //adding a dot
+    buffer[0] = digits[(coefficient / 10)] | CHAR_DOT;  //adding a dot
     buffer[1] = digits[(coefficient % 10)];
     buffer[2] = CHAR_E;
     buffer[3] = digits[4];

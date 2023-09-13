@@ -3,6 +3,7 @@
 #include "mcc_generated_files/system/pins.h"
 #include "display.h"
 #include "millis.h"
+#include "speed_controller.h"
 #include "user_interface.h"
 
 //private functions
@@ -19,6 +20,7 @@ void fan_right_set_off();
 void set_disp_center(volatile ui_display_context_t *context);
 void set_disp_rpm_left(volatile ui_display_context_t *context);
 void set_disp_rpm_right(volatile ui_display_context_t *context);
+void set_disp_pwm(volatile ui_display_context_t *context);
 void set_disp_on(volatile ui_display_context_t *context);
 void set_disp_off(volatile ui_display_context_t *context);
 uint8_t get_animation_char(volatile ui_display_context_t *context, btn_state_enum side);
@@ -31,6 +33,7 @@ void ui_init() {
     display_context.display_state = DISP_CENTER;
     display_context.display_millis = 0;
     display_context.state_changed = true;
+    display_context.speed_percent = 0;
     display_context.left_side.animation_step = 0;
     display_context.left_side.fan_rpm = 0;
     display_context.left_side.fan_on = false;
@@ -104,11 +107,30 @@ void ui_update_pwr_btn() {
     display_context.state_changed = true;
 }
 
-void ui_update_data(bool fan1_on, uint32_t fan1_rpm, bool fan2_on, uint32_t fan2_rpm) {
+void ui_update_tach_data(bool fan1_on, uint32_t fan1_rpm, bool fan2_on, uint32_t fan2_rpm) {
     display_context.left_side.fan_on = fan1_on;
     display_context.left_side.fan_rpm = fan1_rpm;
     display_context.right_side.fan_on = fan2_on;
     display_context.right_side.fan_rpm = fan2_rpm;
+}
+
+void ui_update_pot_data(uint16_t speed_percent) {
+    //prevent display glitch
+    if(display_context.speed_percent > speed_percent) {
+        if(display_context.speed_percent - speed_percent > PWM_POT_DIFF) {
+            display_context.speed_percent = speed_percent;
+            display_context.display_state = DISP_PWM;
+            display_context.state_changed = true;
+        }
+    } else if(speed_percent > display_context.speed_percent) {
+        if(speed_percent - display_context.speed_percent > PWM_POT_DIFF) {
+            display_context.speed_percent = speed_percent;
+            display_context.display_state = DISP_PWM;
+            display_context.state_changed = true;
+        }
+    } else {
+        //do nothing
+    }
 }
 
 void ui_update_state() {
@@ -119,16 +141,12 @@ void ui_update_state() {
     } else if(display_context.display_state == DISP_RPM_RIGHT) {
         set_disp_rpm_right(&display_context);
     } else if(display_context.display_state == DISP_PWM) {
-        //TODO
+        set_disp_pwm(&display_context);
     } else if(display_context.display_state == DISP_ON) {
         set_disp_on(&display_context);
     } else {    //DISP_OFF
         set_disp_off(&display_context);
     }
-}
-
-btn_state_enum ui_get_button_state() {
-    return display_context.button_state;
 }
 
 //wrapper functions for status LEDs
@@ -158,19 +176,19 @@ void led_center_set_off() {
 
 //wrapper functions for fan power controls
 void fan_left_set_on() {
-    ON1_SetHigh();
+    fan1_power(true);
 }
 
 void fan_left_set_off() {
-    ON1_SetLow();
+    fan1_power(false);
 }
 
 void fan_right_set_on() {
-    ON2_SetHigh();
+    fan2_power(true);
 }
 
 void fan_right_set_off() {
-    ON2_SetLow();
+    fan2_power(false);
 }
 
 //private functions
@@ -183,10 +201,10 @@ void set_disp_center(volatile ui_display_context_t *context) {
     if(is_timed_out(context->display_millis, ANIMATION_PERIOD)) {
         context->display_millis = millis();
         uint8_t buffer[DISPLAY_DIGITS];
-        buffer[0] = (context->left_side.fan_on) ? get_animation_char(context, BTN_LEFT) : CHAR_dash;
-        buffer[1] = CHAR_clr;
-        buffer[2] = CHAR_clr;
-        buffer[3] = (context->right_side.fan_on) ? get_animation_char(context, BTN_RIGHT) : CHAR_dash;
+        buffer[0] = (context->left_side.fan_on) ? get_animation_char(context, BTN_LEFT) : CHAR_DASH;
+        buffer[1] = CHAR_CLR;
+        buffer[2] = CHAR_CLR;
+        buffer[3] = (context->right_side.fan_on) ? get_animation_char(context, BTN_RIGHT) : CHAR_DASH;
 
         for(int i = 0; i < DISPLAY_DIGITS; i++) {
             tm1650_send_character(i, buffer[i]);
@@ -220,15 +238,39 @@ void set_disp_rpm_right(volatile ui_display_context_t *context) {
     }
 }
 
+void set_disp_pwm(volatile ui_display_context_t *context) {
+    if(context->state_changed) {
+        context->state_changed = false;
+        context->display_millis = millis();
+        
+        if(context->speed_percent > 100) {
+            context->speed_percent = 100;   //sanity check
+        }
+        tm1650_set_number(context->speed_percent, true);
+        tm1650_send_character(0, CHAR_P);
+    }
+    
+    if(is_timed_out(context->display_millis, PWM_PERIOD)) {
+        if(display_context.button_state == BTN_CENTER) {
+            display_context.display_state = DISP_CENTER;
+        } else if(display_context.button_state == BTN_LEFT) {
+            display_context.display_state = DISP_RPM_LEFT;
+        } else {    //BTN_RIGHT
+            display_context.display_state = DISP_RPM_RIGHT;
+        }
+        display_context.state_changed = true;
+    }
+}
+
 void set_disp_on(volatile ui_display_context_t *context) {
     if(context->state_changed) {
         context->state_changed = false;
         context->display_millis = millis();
         uint8_t buffer[DISPLAY_DIGITS];
         buffer[0] = CHAR_O;
-        buffer[1] = CHAR_n;
-        buffer[2] = CHAR_clr;
-        buffer[3] = CHAR_clr;
+        buffer[1] = CHAR_N;
+        buffer[2] = CHAR_CLR;
+        buffer[3] = CHAR_CLR;
 
         for(int i = 0; i < DISPLAY_DIGITS; i++) {
             tm1650_send_character(i, buffer[i]);
@@ -255,7 +297,7 @@ void set_disp_off(volatile ui_display_context_t *context) {
         buffer[0] = CHAR_O;
         buffer[1] = CHAR_F;
         buffer[2] = CHAR_F;
-        buffer[3] = CHAR_clr;
+        buffer[3] = CHAR_CLR;
 
         for(int i = 0; i < DISPLAY_DIGITS; i++) {
             tm1650_send_character(i, buffer[i]);
@@ -290,6 +332,6 @@ uint8_t get_animation_char(volatile ui_display_context_t *context, btn_state_enu
             }
         return selected_anim;
     } else {    //BTN_CENTER
-        return CHAR_clr;
+        return CHAR_CLR;
     }
 }
